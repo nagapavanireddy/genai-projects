@@ -1,5 +1,4 @@
 import streamlit as st
-import openai
 import base64
 import os
 from gtts import gTTS
@@ -8,17 +7,15 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 from PIL import Image
 import fitz  # PyMuPDF
 
-# ✅ Updated imports for new LangChain split
+# ✅ Updated LangChain imports
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
-
-from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 
-
-# 🔑 Load API key from .env
+# ✅ New OpenAI v1 client
+from openai import OpenAI
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ---------- STREAMLIT UI ----------
 st.set_page_config(page_title="GenAI Projects", layout="wide")
@@ -36,12 +33,12 @@ with tab1:
     user_input = st.text_input("Say something to the avatar:")
 
     if user_input:
-        # GPT Response
-        response = openai.ChatCompletion.create(
+        # GPT Response with new OpenAI API
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": user_input}]
         )
-        answer = response["choices"][0]["message"]["content"]
+        answer = response.choices[0].message.content
         st.markdown(f"**Avatar says:** {answer}")
 
         # Text-to-Speech
@@ -89,14 +86,13 @@ with tab2:
             text += page.get_text()
 
         # Create embeddings + retriever
-        embeddings = OpenAIEmbeddings(openai_api_key=openai.api_key)
+        embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
         db = FAISS.from_texts([text], embeddings)
 
-        llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=openai.api_key)
+        llm = ChatOpenAI(model="gpt-4o-mini", openai_api_key=os.getenv("OPENAI_API_KEY"))
         qa = ConversationalRetrievalChain.from_llm(llm, retriever=db.as_retriever())
 
         query = st.text_input("Ask a question about the document:")
         if query:
             result = qa.run(query)
             st.markdown(f"**Answer:** {result}")
-
