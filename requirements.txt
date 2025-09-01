@@ -1,0 +1,12 @@
+streamlit
+openai
+python-dotenv
+gtts
+torch
+torchvision
+transformers
+pymupdf
+pillow
+faiss-cpu
+langchain-community
+langchain-openai
